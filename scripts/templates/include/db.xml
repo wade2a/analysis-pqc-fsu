@@ -8,7 +8,7 @@
   <RUN mode="SEQUENCE_NUMBER" sequence="TRK_OT_RUN_SEQ">
     <RUN_TYPE>PQC</RUN_TYPE>
 {#    <RUN_NUMBER></RUN_NUMBER>#}
-    <LOCATION>Hephy</LOCATION>
+    <LOCATION>Hephy</LOCATION>  <!-- AJW template needs correction-->
 {# or {{ rawdata.LOCATION }} #}
     <INITIATED_BY_USER>{{ rawdata.INITIATED_BY_USER }}</INITIATED_BY_USER>
     <RUN_BEGIN_TIMESTAMP>{{ rawdata.RUN_BEGIN_TIMESTAMP }}</RUN_BEGIN_TIMESTAMP>
