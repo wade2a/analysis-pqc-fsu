@@ -486,6 +486,7 @@ def analyse_gcd_data(path, options=None, config=None):
 
     series = read_json_file(path).get("series")
     timestamp = series.get("timestamp", np.array([]))
+    biasv = series.get("bias_voltage", np.array([]))
     v = series.get("voltage", np.array([]))
     i_em = series.get("current_elm", np.array([]))
     i_src = series.get("current_vsrc", np.array([]))
@@ -552,6 +553,7 @@ def analyse_gcd_data(path, options=None, config=None):
             "len": len(v),
             "timestamp": timestamp,
             "timestamp_abs": timestamp_abs,
+            "biasv": biasv,
             "v": v,  # Volt
             "i_em": i_em * 1e9,  # A to nA
             "temp": temp,  # degC
