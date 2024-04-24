@@ -13,50 +13,129 @@ class PQC_RawData:
     def __init__(self,path,test,meta,series):
         self.data={}
         self.path=path
-        self.test=test        
+        self.test=test
+        print(self.test,"=selftest")        
         self.sample_name=meta.get('sample_name').replace('2_S','2-S')
+        print('sample name = ', self.sample_name)
         if 'HPK_VPX' in self.sample_name:
             man,batch,wafer,sensortype,hm,location=self.sample_name.split('_')
+            detector = 'TRK'
+        elif 'HGC' in self.sample_name: #hephy sample naming "HGC_C_300_OBA49323_18_NW"
+            testlocation = 'HEPHY'
+            testinstitution = 'Institut fuer Hochenergiephysik'
+            man = 'HPK'
+            detector = 'HGC'
+            samplesplit = self.sample_name.split('_')
+            sensortype = samplesplit[2]
+            batch = samplesplit[3]
+            wafer = samplesplit[4]
+            location = samplesplit[5]
+            if location == 'NW':
+                location = 'TL'
+            elif location == 'SE':
+                location = 'BR'
+            #remove after testing!!
+            if sensortype.startswith('3'):
+                scratchpad = '104700'
+        elif "FSU" in self.sample_name:
+            testlocation = 'FSU'
+            testinstitution = 'Florida State University'
+            man = 'HPK'
+            detector = 'HGC'
+            samplesplit = self.sample_name.split('_')
+            scratchpad = samplesplit[1]
+            location = samplesplit[2]
+            batch = samplesplit[3]
+            wafer = samplesplit[4]
         else:
             # Sample name could not be parsed
             man,batch,wafer,sensortype,hm,location='__','__','__','__','__','__'
+            detector = 'HGC'
+        if detector == 'TRK': #leaving tracker code alone
+            self.sensortype=sensortype.replace('2-S','2S').replace('PSP','PS-p').replace('PSS','PS-s')
+            self.sample_position=meta.get('sample_position')
+            self.sample_comment=meta.get('sample_comment')
+            self.contact_name=meta.get('contact_name')
+            self.measurement_name=meta.get('measurement_name')
+            self.measurement_type=meta.get('measurement_type')
+            is_IV='iv' in self.measurement_type
+            is_CV='cv' in self.measurement_type
+            self.IVCV='IV' if is_IV else 'CV' if is_CV else ''
+            self.start_timestamp=meta.get('start_timestamp')
+            self.operator=meta.get('operator')
+            self.waiting_time=meta.get('waiting_time')
+            filename=os.path.basename(self.path)
+            self.out_file_name= os.path.splitext(filename)[0]+'.xml'
 
-        self.sensortype=sensortype.replace('2-S','2S').replace('PSP','PS-p').replace('PSS','PS-s')
-        self.sample_position=meta.get('sample_position')
-        self.sample_comment=meta.get('sample_comment')
-        self.contact_name=meta.get('contact_name')
-        self.measurement_name=meta.get('measurement_name')
-        self.measurement_type=meta.get('measurement_type')
-        is_IV='iv' in self.measurement_type
-        is_CV='cv' in self.measurement_type
-        self.IVCV='IV' if is_IV else 'CV' if is_CV else ''
-        self.start_timestamp=meta.get('start_timestamp')
-        self.operator=meta.get('operator')
-        self.waiting_time=meta.get('waiting_time')
-        filename=os.path.basename(self.path)
-        self.out_file_name= os.path.splitext(filename)[0]+'.xml'
+            #self.LOCATION='Hephy'
+            self.INITIATED_BY_USER=self.operator
+            self.RUN_BEGIN_TIMESTAMP=self.start_timestamp.replace('T',' ')
+            self.COMMENT_DESCRIPTION=''
+            self.FILE_NAME=filename
+            self.WAITING_TIME_S=self.waiting_time.split(' ')[0]
+            
+            self.NAME_LABEL=self.edit_sample_name(self.sample_name,location)
+            self.KIND_OF_PART='{} Halfmoon {}'.format(self.sensortype,location[0])
+            self.KIND_OF_HM_SET_ID={'L':'Left','R':'Right','_':'__'}[location[1]]
+            self.KIND_OF_HM_FLUTE_ID,self.KIND_OF_HM_STRUCT_ID,self.KIND_OF_HM_CONFIG_ID=self.get_structure()
+            if self.measurement_name=="FET":
+                self.PAR_EXTENSION_TABLE_NAME="TC"
+            else:
+                self.PAR_EXTENSION_TABLE_NAME=self.IVCV
 
-        #self.LOCATION='Hephy'
-        self.INITIATED_BY_USER=self.operator
-        self.RUN_BEGIN_TIMESTAMP=self.start_timestamp.replace('T',' ')
-        self.COMMENT_DESCRIPTION=''
-        self.FILE_NAME=filename
-        self.WAITING_TIME_S=self.waiting_time.split(' ')[0]
-        
-        self.NAME_LABEL=self.edit_sample_name(self.sample_name,location)
-        self.KIND_OF_PART='{} Halfmoon {}'.format(self.sensortype,location[0])
-        self.KIND_OF_HM_SET_ID={'L':'Left','R':'Right','_':'__'}[location[1]]
-        self.KIND_OF_HM_FLUTE_ID,self.KIND_OF_HM_STRUCT_ID,self.KIND_OF_HM_CONFIG_ID=self.get_structure()
-        if self.measurement_name=="FET":
-            self.PAR_EXTENSION_TABLE_NAME="TC"
-        else:
-            self.PAR_EXTENSION_TABLE_NAME=self.IVCV
+            self.VERSION=self.PAR_EXTENSION_TABLE_NAME+'_measurement-004'
+            
+            
+            self.PROCEDURE_TYPE=self.measurement_name.replace("Capacitor","Cap").replace("structure","str").replace("Source","Src") #maximum number of letters is 40
+        elif detector == 'HGC': #xml code for HGC Database
+            if scratchpad.startswith('1'):
+                if location == 'TL':
+                    self.KIND_OF_PART = '300um Si Sensor LD Halfmoon-TL'
+                else:
+                    self.KIND_OF_PART = '300um Si Sensor LD Halfmoon-BR'
+            elif scratchpad.startswith('2'):
+                if location == 'TL':
+                    self.KIND_OF_PART = '200um Si Sensor LD Halfmoon-TL'
+                else:
+                    self.KIND_OF_PART = '200um Si Sensor LD Halfmoon-BR'   
+            elif scratchpad.startswith('3'):
+                if location == 'TL':
+                    self.KIND_OF_PART = '120um Si Sensor HD Halfmoon-TL'
+                else:
+                    self.KIND_OF_PART = '120um Si Sensor HD Halfmoon-BR'
+            else:
+                print('error in scratchpad')
+                print('scratchpad=',scratchpad)
+                input()
+            #self.sensortype=sensortype.replace('2-S','2S').replace('PSP','PS-p').replace('PSS','PS-s')
+            self.sample_position=meta.get('sample_position')
+            self.sample_comment=meta.get('sample_comment')
+            self.contact_name=meta.get('contact_name')
+            self.measurement_name=meta.get('measurement_name')
+            self.measurement_type=meta.get('measurement_type')
+            is_IV='iv' in self.measurement_type
+            is_CV='cv' in self.measurement_type
+            self.IVCV='IV' if is_IV else 'CV' if is_CV else ''
+            self.start_timestamp=meta.get('start_timestamp')
+            self.operator=meta.get('operator')
+            self.waiting_time=meta.get('waiting_time')
+            filename=os.path.basename(self.path)
+            self.out_file_name= os.path.splitext(filename)[0]+'.xml'
+            self.SERIAL_NUMBER = scratchpad + '_' + location
+            self.NAME_LABEL = self.KIND_OF_PART + scratchpad
+            self.LOCATION = testlocation
+            self.INSTITUTION = testinstitution
+            self.RUN_NAME=filename
+            self.INITIATED_BY_USER=self.operator
+            self.RUN_BEGIN_TIMESTAMP=self.start_timestamp.replace('T',' ')
+            self.COMMENT_DESCRIPTION=self.sample_comment
+            self.FILE_NAME=filename
+            
+            self.WAITING_TIME_S=self.waiting_time.split(' ')[0]
 
-        self.VERSION=self.PAR_EXTENSION_TABLE_NAME+'_measurement-004'
-        
-        
-        self.PROCEDURE_TYPE=self.measurement_name.replace("Capacitor","Cap").replace("structure","str").replace("Source","Src") #maximum number of letters is 40
-        
+
+
+            
     def add_data(self,data_dict):
         self.data={**self.data,**data_dict}
 

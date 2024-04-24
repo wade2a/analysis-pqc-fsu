@@ -28,7 +28,13 @@ def render_templates(pqc_resultset: PQC_resultset, templates: Iterable) -> None:
     """Render templates using a PQC resultset, templates is an iterable of glob
     statements, eg. ['*.xml', '*.txt'].
     """
-    template_dir = os.path.join(os.path.dirname(__file__), "templates")
+    #use HGCAL templates when OBA batches are used. Could be a better solution using configs?
+    if  'HGC' in pqc_resultset.labels[0] or 'FSU' in pqc_resultset.labels[0]:
+        template_dir = os.path.join(os.path.dirname(__file__), "templates_HGCAL")
+        print(pqc_resultset.labels)
+    else:
+        template_dir = os.path.join(os.path.dirname(__file__), "templates")
+
     # Create output directory
     create_dir(pqc_resultset.output_dir)
 
@@ -90,7 +96,6 @@ def write_to_file(output_dir, basename, content) -> None:
         print(content)
     else:
         output_filename = os.path.join(output_dir,basename)
-
         with open(output_filename, "w") as fh:
             print(f"rendering file {output_filename} ... ", end="", flush=True)
             fh.write(content)
