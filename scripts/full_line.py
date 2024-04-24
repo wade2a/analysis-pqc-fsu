@@ -29,7 +29,7 @@ def render_templates(pqc_resultset: PQC_resultset, templates: Iterable) -> None:
     statements, eg. ['*.xml', '*.txt'].
     """
     #use HGCAL templates when OBA batches are used. Could be a better solution using configs?
-    if  'OBA' in pqc_resultset.labels[0]:
+    if  'HGC' in pqc_resultset.labels[0] or 'FSU' in pqc_resultset.labels[0]:
         template_dir = os.path.join(os.path.dirname(__file__), "templates_HGCAL")
         print(pqc_resultset.labels)
     else:
